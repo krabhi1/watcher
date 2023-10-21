@@ -29,9 +29,9 @@ const argv = yargs(hideBin(process.argv))
 const currentDirectory = process.cwd();
 console.log(`watching  directory: ${currentDirectory}`);
 const filesToWatch = "./";
-const bashScript = argv.run;
-console.log({argv})
+const bashScript = argv.run || 'run.sh';
 const ignoredDirs = argv.ignoreDirs?argv.ignoreDirs.split(','):[]
+ignoredDirs.push('.git')
 const ignoredFiles =argv.ignoreFiles?argv.ignoreFiles.split(','):[]
 console.log({ ignoredDirs, ignoredFiles, bashScript })
 
