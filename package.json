@@ -1,14 +1,16 @@
 {
   "name": "watcher",
   "version": "1.0.0",
-  "description": "",
-  "main": "main.js", 
+  "description": "watch directory and run script when file change",
+  "main": "main.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "file-watcher,nodejs"
+  ],
+  "author": "krabhidev",
   "license": "ISC",
   "dependencies": {
     "chokidar": "^3.5.3",
