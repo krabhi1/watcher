@@ -1,6 +1,6 @@
 {
   "name": "watcher2",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "watch directory and run script when file change",
   "main": "main.js",
   "type": "module",

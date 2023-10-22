@@ -5,6 +5,11 @@ import process from 'process';
 import c from './color.js';
 import yargs from 'yargs';
 import { hideBin } from "yargs/helpers";
+import fs from 'fs/promises'
+import { fileURLToPath } from 'url';
+import path from 'path'
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const packageJson = JSON.parse(await fs.readFile(path.join(__dirname, 'package.json'), 'utf-8'))
 const argv = yargs(hideBin(process.argv))
     .option('ignoreDirs', {
         alias: 'd',
@@ -24,6 +29,8 @@ const argv = yargs(hideBin(process.argv))
     .help('help')
     .alias('help', 'h')
     .example("node yourScript.js --ignoreDirs=dir1,dir2 --ignoreFiles=file1.txt,file2.txt --run=myscript.sh")
+    .version(packageJson.version) // Add the version option
+    .alias('version', 'v') // Optional alias for the version option
     .parse()
 
 
@@ -34,7 +41,7 @@ const bashScript = argv.run || 'run.sh';
 const ignoredDirs = argv.ignoreDirs ? argv.ignoreDirs.split(',') : []
 ignoredDirs.push('.git')
 const ignoredFiles = argv.ignoreFiles ? argv.ignoreFiles.split(',') : []
-console.log(`${c.dim}`,{ ignoredDirs, ignoredFiles, bashScript },`${c.reset}`)
+console.log(`${c.dim}`, { ignoredDirs, ignoredFiles, bashScript }, `${c.reset}`)
 
 
 const watcher = watch(filesToWatch, {
