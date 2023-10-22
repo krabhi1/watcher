@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { watch } from 'chokidar';
 import { exec } from 'child_process';
 import process from 'process';
@@ -27,13 +28,13 @@ const argv = yargs(hideBin(process.argv))
 
 
 const currentDirectory = process.cwd();
-console.log(`watching  directory: ${currentDirectory}`);
+console.log(`${c.dim}watching  directory: ${currentDirectory}${c.reset}`);
 const filesToWatch = "./";
 const bashScript = argv.run || 'run.sh';
-const ignoredDirs = argv.ignoreDirs?argv.ignoreDirs.split(','):[]
+const ignoredDirs = argv.ignoreDirs ? argv.ignoreDirs.split(',') : []
 ignoredDirs.push('.git')
-const ignoredFiles =argv.ignoreFiles?argv.ignoreFiles.split(','):[]
-console.log({ ignoredDirs, ignoredFiles, bashScript })
+const ignoredFiles = argv.ignoreFiles ? argv.ignoreFiles.split(',') : []
+console.log(`${c.dim}`,{ ignoredDirs, ignoredFiles, bashScript },`${c.reset}`)
 
 
 const watcher = watch(filesToWatch, {
@@ -56,6 +57,7 @@ function runScript() {
         console.log(stdout);
     });
 }
+console.log(`${c.blue}` + '-'.repeat(25) + 'output' + '-'.repeat(25) + `${c.reset}`)
 runScript()
 // Set up the event listener for file changes
 watcher.on('change', (filePath) => {
