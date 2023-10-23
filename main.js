@@ -50,7 +50,6 @@ const watcher = watch(filesToWatch, {
 });
 
 async function runScript() {
-    msg = ''
     if (!bashScript) {
         console.log(`${c.red} run script missing!`)
         return
