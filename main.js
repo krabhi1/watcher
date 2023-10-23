@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 import { watch } from 'chokidar';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import process from 'process';
 import c from './color.js';
 import yargs from 'yargs';
 import { hideBin } from "yargs/helpers";
-import fs from 'fs/promises'
+import fs, { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url';
 import path from 'path'
+import { print } from './utils.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(await fs.readFile(path.join(__dirname, 'package.json'), 'utf-8'))
 const argv = yargs(hideBin(process.argv))
@@ -41,31 +42,23 @@ const bashScript = argv.run || 'run.sh';
 const ignoredDirs = argv.ignoreDirs ? argv.ignoreDirs.split(',') : []
 ignoredDirs.push('.git')
 const ignoredFiles = argv.ignoreFiles ? argv.ignoreFiles.split(',') : []
-console.log(`${c.dim}`, { ignoredDirs, ignoredFiles, bashScript }, `${c.reset}`)
+print({ ignoredDirs, ignoredFiles, bashScript }, c.dim)
 
 
 const watcher = watch(filesToWatch, {
     ignored: [...ignoredDirs, ...ignoredFiles],
 });
 
-//console.log(`Watching files: ${filesToWatch.join(', ')}`);
-function clear() {
-    process.stdout.write('\x1Bc');
-}
-function runScript() {
+async function runScript() {
+    msg = ''
     if (!bashScript) {
         console.log(`${c.red} run script missing!`)
         return
     }
-    exec(` bash ${bashScript}`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing the bash script: ${error}`);
-        }
-        console.log(stdout);
-    });
+    const commands = await readFile(bashScript, 'utf-8')
+    shell.stdin.write(commands + "\n");
 }
 console.log(`${c.blue}` + '-'.repeat(25) + 'output' + '-'.repeat(25) + `${c.reset}`)
-runScript()
 // Set up the event listener for file changes
 watcher.on('change', (filePath) => {
     clear()
@@ -78,3 +71,25 @@ watcher.on('change', (filePath) => {
 watcher.on('error', (error) => {
     console.error(`Watcher error: ${error}`);
 });
+
+const shell = spawn('bash', { shell: true });
+//shell.stdout.pipe(process.stdin)
+shell.stdout.on('data', (data) => {
+    const text = data.toString()
+    process.stdout.write(text)
+
+});
+shell.stderr.on('data', (data) => {
+    const text = data.toString()
+    process.stdout.write(`${c.red} ${text} ${c.reset}`)
+});
+
+function clear() {
+    process.stdout.write('\x1Bc');
+}
+shell.on('close', (code) => {
+    console.log(`Shell closed with code ${code}`);
+});
+
+
+runScript()

@@ -1,2 +1,7 @@
 #!/bin/bash
-echo "bash bash"  
+echo 1
+echo 2
+echo 3
+echo 4
+echo 33
+echo 3334
