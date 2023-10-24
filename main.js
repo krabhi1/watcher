@@ -44,7 +44,7 @@ const ignoredDirs = argv.ignoreDirs ? argv.ignoreDirs.split(',') : []
 ignoredDirs.push('.git')
 const ignoredFiles = argv.ignoreFiles ? argv.ignoreFiles.split(',') : []
 print({ ignoredDirs, ignoredFiles, bashScript }, c.dim)
-
+let currentShell = null
 
 const watcher = watch(filesToWatch, {
     ignored: [...ignoredDirs, ...ignoredFiles],
@@ -55,8 +55,11 @@ async function runScript() {
         console.log(`${c.red} run script missing!`)
         return
     }
+    reCreateShell()
     const commands = await readFile(bashScript, 'utf-8')
-    shell.stdin.write(commands + "\n");
+    if (currentShell) {
+        currentShell.stdin.write(commands + "\n");
+    }
 }
 console.log(`${c.blue}` + '-'.repeat(25) + 'output' + '-'.repeat(25) + `${c.reset}`)
 // Set up the event listener for file changes
@@ -72,24 +75,30 @@ watcher.on('error', (error) => {
     console.error(`Watcher error: ${error}`);
 });
 
-const shell = spawn('bash', { shell: true });
-//shell.stdout.pipe(process.stdin)
-shell.stdout.on('data', (data) => {
-    const text = data.toString()
-    process.stdout.write(text)
+function reCreateShell() {
+    if (currentShell) {
+        currentShell.kill()
+    }
+    const _shell = spawn('bash', { shell: true });
+    //shell.stdout.pipe(process.stdin)
+    _shell.stdout.on('data', (data) => {
+        const text = data.toString()
+        process.stdout.write(text)
 
-});
-shell.stderr.on('data', (data) => {
-    const text = data.toString()
-    process.stdout.write(`${c.red} ${text} ${c.reset}`)
-});
+    });
+    _shell.stderr.on('data', (data) => {
+        const text = data.toString()
+        process.stdout.write(`${c.red} ${text} ${c.reset}`)
+    });
 
+
+    _shell.on('close', (code) => {
+        // console.log(`Shell closed with code ${code}`);
+    });
+    currentShell = _shell
+}
 function clear() {
     process.stdout.write('\x1Bc');
 }
-shell.on('close', (code) => {
-    console.log(`Shell closed with code ${code}`);
-});
-
 
 runScript()
