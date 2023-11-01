@@ -28,6 +28,11 @@ const argv = yargs(hideBin(process.argv))
         describe: 'Bash script to execute',
         type: 'string',
     })
+    .option('args', {
+        alias: 'a',
+        describe: 'script arguments',
+        type: 'string',
+    })
     .help('help')
     .alias('help', 'h')
     .example("node yourScript.js --ignoreDirs=dir1,dir2 --ignoreFiles=file1.txt,file2.txt --run=myscript.sh")
@@ -43,7 +48,8 @@ const bashScript = argv.run || 'run.sh';
 const ignoredDirs = argv.ignoreDirs ? argv.ignoreDirs.split(',') : []
 ignoredDirs.push('.git')
 const ignoredFiles = argv.ignoreFiles ? argv.ignoreFiles.split(',') : []
-print({ ignoredDirs, ignoredFiles, bashScript }, c.dim)
+const args = argv.args ? argv.args.split(" ") : []
+print({ ignoredDirs, ignoredFiles, bashScript, args }, c.dim)
 let currentShell = null
 
 const watcher = watch(filesToWatch, {
@@ -56,10 +62,10 @@ async function runScript() {
         return
     }
     reCreateShell()
-    const commands = await readFile(bashScript, 'utf-8')
-    if (currentShell) {
-        currentShell.stdin.write(commands + "\n");
-    }
+    // const commands = await readFile(bashScript, 'utf-8')
+    // if (currentShell) {
+    //     currentShell.stdin.write(commands + "\n");
+    // }
 }
 console.log(`${c.blue}` + '-'.repeat(25) + 'output' + '-'.repeat(25) + `${c.reset}`)
 // Set up the event listener for file changes
@@ -79,7 +85,7 @@ function reCreateShell() {
     if (currentShell) {
         currentShell.kill()
     }
-    const _shell = spawn('bash', { shell: true });
+    const _shell = spawn('bash ' + bashScript, args, { shell: true, });
     //shell.stdout.pipe(process.stdin)
     _shell.stdout.on('data', (data) => {
         const text = data.toString()
@@ -93,7 +99,7 @@ function reCreateShell() {
 
 
     _shell.on('close', (code) => {
-        // console.log(`Shell closed with code ${code}`);
+        //console.log(`Shell closed with code ${code}`);
     });
     currentShell = _shell
 }
