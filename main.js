@@ -8,7 +8,7 @@ import { hideBin } from "yargs/helpers";
 import fs, { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url';
 import path from 'path'
-import { print } from './utils.js';
+import { isFileExists, print } from './utils.js';
 clear()
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(await fs.readFile(path.join(__dirname, 'package.json'), 'utf-8'))
@@ -44,49 +44,58 @@ const argv = yargs(hideBin(process.argv))
 const currentDirectory = process.cwd();
 console.log(`${c.dim}watching  directory: ${currentDirectory}${c.reset}`);
 const filesToWatch = "./";
-const bashScript = argv.run || 'run.sh';
+const runArg = argv.run
+//check run.sh exists or not
+const isScriptMode = isFileExists(runArg)
+
 const ignoredDirs = argv.ignoreDirs ? argv.ignoreDirs.split(',') : []
 ignoredDirs.push('.git')
 const ignoredFiles = argv.ignoreFiles ? argv.ignoreFiles.split(',') : []
 const args = argv.args ? argv.args.split(" ") : []
-print({ ignoredDirs, ignoredFiles, bashScript, args }, c.dim)
+print({ ignoredDirs, ignoredFiles, runArg: runArg, args, isScriptMode }, c.dim)
 let currentShell = null
 
 const watcher = watch(filesToWatch, {
     ignored: [...ignoredDirs, ...ignoredFiles],
 });
 
-async function runScript() {
-    if (!bashScript) {
-        console.log(`${c.red} run script missing!`)
-        return
-    }
-    reCreateShell()
-    // const commands = await readFile(bashScript, 'utf-8')
-    // if (currentShell) {
-    //     currentShell.stdin.write(commands + "\n");
-    // }
-}
-console.log(`${c.blue}` + '-'.repeat(25) + 'output' + '-'.repeat(25) + `${c.reset}`)
-// Set up the event listener for file changes
-watcher.on('change', (filePath) => {
+async function run(msg) {
     clear()
-    console.log(`${c.green}reload due to : ${c.yellow}${filePath}  ${c.green}change${c.reset}`);
-    console.log(`${c.blue}` + '-'.repeat(25) + 'output' + '-'.repeat(25) + `${c.reset}`)
-    runScript()
+    if (msg)
+        console.log(`${c.green} ${msg} ${c.reset}`);
+    drawLineWithText('output')
+    reCreateShell()
+}
+process.stdout.on('resize', () => {
+    run("reload due to terminal resize") 
+})
+watcher.on('change', (filePath) => {
+    run(`reload due to : ${filePath} change`)
 });
 
 // Handle errors and other events if needed 
 watcher.on('error', (error) => {
     console.error(`Watcher error: ${error}`);
 });
+function drawLineWithText(text) {
+    const { columns } = process.stdout;
+    const times = (columns - text.length) / 2
+    console.log(`${c.blue}` + '-'.repeat(times) + text + '-'.repeat(times) + `${c.reset}`)
 
+}
 function reCreateShell() {
     if (currentShell) {
         currentShell.kill()
     }
-    const _shell = spawn('bash ' + bashScript, args, { shell: true, });
-    //shell.stdout.pipe(process.stdin)
+    let _shell
+    if (isScriptMode) {
+        _shell = spawn('bash ', [runArg, ...args], { shell: true, });
+    } else {
+        const runArgsList = runArg.trim().split(' ').filter(Boolean)
+        const command = runArgsList.shift()
+        // console.log({ command, runArgsList })
+        _shell = spawn(command, runArgsList, { shell: true, });
+    }
     _shell.stdout.on('data', (data) => {
         const text = data.toString()
         process.stdout.write(text)
@@ -107,4 +116,4 @@ function clear() {
     process.stdout.write('\x1Bc');
 }
 
-runScript()
+run()
