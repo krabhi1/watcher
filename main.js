@@ -9,7 +9,6 @@ import fs, { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url';
 import path from 'path'
 import { isFileExists, print } from './utils.js';
-clear()
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(await fs.readFile(path.join(__dirname, 'package.json'), 'utf-8'))
 const argv = yargs(hideBin(process.argv))
@@ -27,6 +26,8 @@ const argv = yargs(hideBin(process.argv))
         alias: 'r',
         describe: 'Bash script to execute',
         type: 'string',
+        required: true,
+
     })
     .option('args', {
         alias: 'a',
@@ -36,15 +37,16 @@ const argv = yargs(hideBin(process.argv))
     .help('help')
     .alias('help', 'h')
     .example("node yourScript.js --ignoreDirs=dir1,dir2 --ignoreFiles=file1.txt,file2.txt --run=myscript.sh")
+    .example("node yourScript.js --ignoreDirs=dir1,dir2 --ignoreFiles=file1.txt,file2.txt --run='node -v'")
     .version(packageJson.version) // Add the version option
     .alias('version', 'v') // Optional alias for the version option
     .parse()
 
-
+console.log(argv)
 const currentDirectory = process.cwd();
 console.log(`${c.dim}watching  directory: ${currentDirectory}${c.reset}`);
 const filesToWatch = "./";
-const runArg = argv.run
+const runArg = argv.run|""
 //check run.sh exists or not
 const isScriptMode = isFileExists(runArg)
 
@@ -67,7 +69,7 @@ async function run(msg) {
     reCreateShell()
 }
 process.stdout.on('resize', () => {
-    run("reload due to terminal resize") 
+    run("reload due to terminal resize")
 })
 watcher.on('change', (filePath) => {
     run(`reload due to : ${filePath} change`)
@@ -91,8 +93,12 @@ function reCreateShell() {
     if (isScriptMode) {
         _shell = spawn('bash ', [runArg, ...args], { shell: true, });
     } else {
+        if(!runArg || runArg.trim() === ""){
+            throw new Error("run argument is empty or not provided")
+        }
         const runArgsList = runArg.trim().split(' ').filter(Boolean)
         const command = runArgsList.shift()
+
         // console.log({ command, runArgsList })
         _shell = spawn(command, runArgsList, { shell: true, });
     }

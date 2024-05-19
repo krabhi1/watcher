@@ -1,6 +1,6 @@
 {
   "name": "watcher2",
-  "version": "1.0.8",
+  "version": "2.0.2",
   "description": "watch directory and run script when file change",
   "main": "main.js",
   "type": "module",
@@ -8,7 +8,7 @@
     "watcher2": "main.js"
   },
   "scripts": {
-    "build":""
+    "build": ""
   },
   "keywords": [
     "file-watcher,nodejs"
@@ -19,4 +19,5 @@
     "chokidar": "^3.5.3",
     "yargs": "^17.7.2"
   }
+ 
 }
