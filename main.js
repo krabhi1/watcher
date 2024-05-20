@@ -46,7 +46,7 @@ console.log(argv)
 const currentDirectory = process.cwd();
 console.log(`${c.dim}watching  directory: ${currentDirectory}${c.reset}`);
 const filesToWatch = "./";
-const runArg = argv.run|""
+const runArg = argv.run || ""
 //check run.sh exists or not
 const isScriptMode = isFileExists(runArg)
 
@@ -61,7 +61,11 @@ const watcher = watch(filesToWatch, {
     ignored: [...ignoredDirs, ...ignoredFiles],
 });
 
-async function run(msg) {
+async function run(msg, justShell = false) {
+    if (justShell) {
+        reCreateShell()
+        return
+    }
     clear()
     if (msg)
         console.log(`${c.green} ${msg} ${c.reset}`);
@@ -87,20 +91,24 @@ function drawLineWithText(text) {
 }
 function reCreateShell() {
     if (currentShell) {
-        currentShell.kill()
+        //kill all its child process
+        currentShell.kill();
+
     }
     let _shell
     if (isScriptMode) {
-        _shell = spawn('bash ', [runArg, ...args], { shell: true, });
+        _shell = spawn('bash ', [runArg, ...args], { shell: "/usr/bin/bash" });
     } else {
-        if(!runArg || runArg.trim() === ""){
-            throw new Error("run argument is empty or not provided")
+        if (runArg == "") {
+            console.log("run argument is empty")
+            process.exit(1)
         }
+
         const runArgsList = runArg.trim().split(' ').filter(Boolean)
         const command = runArgsList.shift()
 
         // console.log({ command, runArgsList })
-        _shell = spawn(command, runArgsList, { shell: true, });
+        _shell = spawn(command, runArgsList, { shell: "/usr/bin/bash", }); 
     }
     _shell.stdout.on('data', (data) => {
         const text = data.toString()
@@ -109,12 +117,12 @@ function reCreateShell() {
     });
     _shell.stderr.on('data', (data) => {
         const text = data.toString()
-        process.stdout.write(`${c.red} ${text} ${c.reset}`)
+        process.stdout.write(`${c.red} ${text} ${c.reset}`) 
     });
 
-
+ 
     _shell.on('close', (code) => {
-        //console.log(`Shell closed with code ${code}`);
+        // console.log(`Shell closed with code ${code}`);
     });
     currentShell = _shell
 }
@@ -122,4 +130,4 @@ function clear() {
     process.stdout.write('\x1Bc');
 }
 
-run()
+run(undefined, true)
